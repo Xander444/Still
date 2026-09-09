@@ -1,4 +1,4 @@
-# How Still 3 chooses a reply
+# How Still 4 chooses a reply
 
 Still is a symbolic program, not a language model. The engine receives a string and returns a response object:
 
@@ -8,7 +8,7 @@ const reply = bot.respond("I'm worried about my exam tomorrow.");
 // { role: 'bot', text, suggestions, support, trace }
 ```
 
-The browser exposes `Still`, `StillContent`, `StillDialogue`, and `StillFriend` through ordinary script tags. Load `content.js`, `dialogue.js`, `friend.js`, `engine.js`, then `app.js`. Node tests use CommonJS exports. This deliberate dual export avoids module-fetch restrictions when opening the downloaded HTML directly.
+The browser exposes `Still`, `StillContent`, `StillDialogue`, and `StillFriend` through ordinary script tags. Load `content.js`, `dialogue.js`, `friend.js`, `conversation.js`, `engine.js`, then `app.js`. Node tests use CommonJS exports. This deliberate dual export avoids module-fetch restrictions when opening the downloaded HTML directly.
 
 ## Routing order
 
@@ -128,7 +128,7 @@ The example topic above is a customization example, not an included extra featur
 
 - Chat saving is opt-in. The chat key is `still.chat.v1`; appearance preferences use `still.preferences.v1`.
 - Saved state is reconstructed from known keys with bounds. Arbitrary persisted objects, traces, or rule names are not executed.
-- The engine state schema is version 3; dialogue records remain version 2 and social records are version 1. Version 1 and 2 chats migrate with their existing notes and messages, without inventing old structured records. Validated pending repairs and the supported evidence-backed interpretation can resume after reload.
+- The engine state schema is version 6; dialogue records remain version 2 and social and conversation records are version 1. Earlier chats migrate with existing notes and messages, without inventing old structured records. Validated pending repairs and the supported evidence-backed interpretation can resume after reload.
 - User messages, notes, and response text are written through `textContent` or input `.value`, never interpreted as HTML or code.
 - There is no `fetch`, XHR, WebSocket, remote font, or remote script.
 - A storage event from another tab pauses saving or clears the local conversation after deletion, preventing a stale tab from silently resurrecting an erased chat.
@@ -143,6 +143,48 @@ The bot has a finite response library. It does not retrieve web facts or compose
 
 ## Validation included with this release
 
-The included Node suites cover 86 behavior scenarios. JavaScript syntax, HTML asset paths, script ordering, and UI control references were also checked statically. A live browser session and screen-reader audit were not performed in the build environment. Try the extracted app in your intended browser before publishing; verify mobile layout, keyboard behavior, dialog focus, local saving, erasure, export, and your own example conversations.
+The included Node suites cover 206 behavior scenarios. JavaScript syntax, HTML asset paths, script ordering, and UI control references are checked statically. A live browser session and screen-reader audit were not performed in the build environment.
 
 Automated tests establish those specific behaviors, not clinical safety or the quality of arbitrary conversations.
+
+## Version 4 conversation layer
+
+Load `everyday.js` after `friend.js`, then `conversation.js`, `language.js`, and `engine.js`. Each module exposes a browser global and CommonJS export. `state.conversation` uses its own version 1 schema; the engine schema is version 6.
+
+The module scores phrase families, extracts selected entity fields, records typed questions, assembles reply components, and tracks up to eight ongoing stories with six recent contributions each. Story details are editable through removal and resolution controls; individual automatic recalls can be disabled. Reload restores bounded records, while New conversation clears stories.
+
+A story check-in requires five turns since mention, ten since its previous question, and seven since the previous story recall. Only open, enabled, nonsensitive stories qualify. No callback assumes an outcome. Personal people-memory callbacks retain their separate existing cooldown.
+
+Tone analysis separates explicit self feelings, other-person descriptions, and event valence. Simple negation and mixed emotions are represented. Uncertain cues produce restrained wording. Interpretation of arbitrary syntax, sarcasm, and ambiguous pronouns remains limited.
+
+The original reflection and action modes continue to use their existing routing. Tests cover supported paraphrases, interruptions, short answers, entity extraction, composition, callbacks, controls, migration, and tone ownership.
+
+## Version 5 language and repair layer
+
+`language.js` provides one-pass perspective changes, conservative reflection patterns, clause boundaries, phrase variation, and bounded sentence memory. Its version 1 state keeps 100 sentences and 16 recent template choices. It checks normalized equality and high word-set overlap, not semantic similarity. Reflections concentrate on feelings, wishes, needs, and thoughts. Quoted collective wording avoids faulty substitutions such as “you want you to.” Harsh self-verdicts are excluded.
+
+`Engine.finish` applies this layer only to eligible ordinary replies. A reflection replaces a conversational question; it is tracked as a reflection rather than as an answer to the omitted question. The former typed question can be deferred. A pause becomes an open invitation with no factual answer slot. A yes/no answer to a reflection cannot populate preparation, subject, or another unasked slot. Direct question preference preserves the typed path; Balanced and Fewer questions vary the pace.
+
+The conversation layer harvests a small set of explicit volunteered facts before choosing a question. `setQuestion` follows bounded transitions past known or user-marked answered slots. `fitsQuestion` prevents selected type mismatches, including feelings entered as durations, full emotional sentences entered as subjects, and a future goal entered as past conversation content. These checks are deliberately finite and do not prove general comprehension.
+
+For messages with separate recognizable concerns, the layer acknowledges up to two secondary clauses, stores supported separate events, and follows one primary clause. Explicit priority language wins; a personal negative feeling or setback otherwise receives priority. It does not make causal claims between clauses. Untangle it can use this path and ambiguity clarification without replacing its other structured rules.
+
+Meaning clarifications have an explicit pending record and expire after three turns. Confirmed relationship type is stored on its story. Supported feeling replacements update both the conversation record and the active structured thread; up to 16 corrections persist with their source scope. Later explicit feelings can replace the story's current feeling. New conversation clears stories, interpretations, sentence history, and reports.
+
+Each generated reply has a local identifier and a bounded feedback context. Reports keep the chosen reason, input, reply, routing label when available, and up to four previous messages. They are capped at 40 and share the existing saving opt-in. Reporting an old reply or an urgent-support reply records the example without changing the current state. Wrong topic releases the active context, Wrong assumption invites a correction, and Already answered marks that story slot to skip. Exports are local JSON downloads with no telemetry or training endpoint. Clearing reports does not undo corrections already made to notes.
+
+All new saved fields are reconstructed with type checks and size bounds. Unknown keys and prototype-related fact keys are rejected. Existing version 1–4 snapshots are accepted; missing new fields start empty. The package remains dependency-free and works with relative paths on GitHub Pages or from a local extracted folder.
+
+## Version 6 everyday conversation layer
+
+`everyday.js` contains 32 original topic packs: phrase patterns, openings, six typed stages with two question variants each, a practical prompt, and topic anchors. The conversation module merges their intent definitions into its existing scorer. Ordinary interests have more specific routes while the general hobby path remains a fallback. No language model, embedding index, or downloaded dataset is used.
+
+Each new story uses the same bounded memory and controls as an existing story. Extracted details populate known slots, and the next question is selected from unfilled, unskipped slots. A reply can contribute both its answer and a separate explicit detail, such as a daily event and company. Exclusive new details, such as a wish or who introduced a game, are kept out of unrelated slots. These are phrase rules, not full grammatical parsing; unclear free descriptions can still be assigned incorrectly.
+
+A validation request takes priority over ordinary question advancement. It clears the obsolete question and invites the user to explain the doubt. Supported cues distinguish uncertainty about feelings, ability, and speaking openly. Explicit preparation can support reassurance; the module does not infer that success is assured. Quoted uncertainty attributed to another person is not automatically treated as the user's own question. Ordinary unknown answers skip a stage without becoming remembered preferences.
+
+Information requests are kept out of personal-answer slots. A recovery record stores only a bounded anchor, kind, recent turn, and failure count. The response states the information limit, then asks a related conversational question. During recovery, a small set of topic anchors can route a follow-up such as “I saw it in a movie” into the films path. Repeated missing context rotates clarification language and offers valid topic choices. The engine still needs explicit facts to answer questions; it never fetches current events or invents a factual answer to conceal its limitation.
+
+New personal health, sleep, money, confidence, and exercise stories disable automatic recalls at creation, including secondary-story and validation paths, and on restore. Manual returns are available. Their settings control shows why automatic check-ins are off. New ordinary replies use the existing ELIZA, pacing, and repetition layer. Validation and information-limit statements retain their meaning rather than being replaced by an unrelated reflection.
+
+Version 1–5 snapshots migrate into engine version 6. Source messages retain original spelling; only matching text receives the limited informal-word normalization. Topic content stays in code and is not copied into browser state. All bounds, opt-in saving, deletion, and local exports remain in place.

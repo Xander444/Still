@@ -12,3 +12,9 @@ dialog{border:1px solid var(--line);border-radius:22px;padding:0;background:var(
 @media(max-width:370px){.chat-header h1{font-size:20px}.compact{max-width:100px}.mobile-modes button{font-size:12px;padding:8px}.message-avatar{display:none}.composer-meta{font-size:12px}.chat-header{padding-inline:14px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media print{.sidebar,.chat-header,.composer-area,.mobile-modes,dialog,.toast,.reply-tools,.debug{display:none!important}.app-shell,.main-panel{display:block;height:auto}.conversation-scroll{overflow:visible}.conversation{max-width:none}.message{break-inside:avoid}.message.user{background:#eee;color:#111}.message-text{color:#111}}
+/* Optional feedback stays visually secondary to the conversation. */
+.reply-feedback { margin-top: .65rem; font-size: .78rem; color: var(--muted, #6b716e); }
+.reply-feedback summary { cursor: pointer; width: fit-content; padding: .35rem 0; }
+.reply-feedback summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.feedback-choices { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .5rem; }
+.feedback-choices button { font-size: .78rem; min-height: 36px; }

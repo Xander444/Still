@@ -12,6 +12,9 @@
   <script src="assets/content.js" defer></script>
   <script src="assets/dialogue.js" defer></script>
   <script src="assets/friend.js" defer></script>
+  <script src="assets/everyday.js" defer></script>
+  <script src="assets/conversation.js" defer></script>
+  <script src="assets/language.js" defer></script>
   <script src="assets/engine.js" defer></script>
   <script src="assets/app.js" defer></script>
 </head>
@@ -67,6 +70,8 @@
       <section><h3>Conversation notes</h3><p class="muted">Only things you explicitly share. These can be mistaken; you can edit or remove them.</p><div id="memory-list" class="memory-list"></div></section>
       <section><h3>People & interests</h3><p class="muted">Names and interests you share can come up later in conversation. Edit or remove them here, or say “Don’t ask about Leo.” Saved between visits only when saving is enabled.</p><div id="people-list" class="memory-list"></div></section>
       <section><h3>Conversation threads</h3><p class="muted">Situations you have talked about, with the details Still is using. Return to one, mark it resolved, or remove it. Interpretations are suggestions in the chat; they are not stored here as facts unless you confirm them.</p><div id="threads-list" class="threads-list"></div></section>
+      <section><h3>Ongoing stories</h3><p class="muted">Everyday topics Still can follow across several messages, such as a plan, hobby, crush, school event, or conflict. Open stories may come up again at a natural pause. You control each one here.</p><div id="stories-list" class="threads-list"></div></section>
+      <section><h3>Replies that missed</h3><p class="muted">Use “That didn’t fit” below a reply to flag a wrong topic, wrong assumption, or an answered question. Reports stay on this device and are saved with the chat only if saving is enabled. Downloads include the flagged reply and nearby messages; review before sharing.</p><p id="feedback-count" class="muted">No replies flagged yet.</p><div class="dialog-buttons"><button id="feedback-export" class="secondary-button">Download flagged examples</button><button id="feedback-clear" class="text-button">Clear flagged examples</button></div></section>
       <section class="settings-actions"><button id="export-button" class="secondary-button">Download conversation</button><button id="clear-button" class="danger-button">Erase chat & notes</button></section>
       <section class="mobile-tools"><h3>Take a moment</h3><button id="mobile-ground" class="secondary-button">Grounding pause</button><button id="mobile-wrap" class="secondary-button">Wrap up</button></section>
       <details><summary>How Still works</summary><p>Still uses written conversation rules, word patterns, and notes from this chat. It can miss context, sarcasm, or the meaning of a sentence. Correct it any time. It cannot diagnose, provide treatment, or contact help for you.</p><p>There are no accounts, analytics, remote fonts, language models, or API keys. A hosting provider may log page visits; Still's code does not send your messages anywhere.</p><label class="switch-row"><span>Show why a reply was chosen<small>A view into the rules, useful when customizing the code.</small></span><input id="debug-toggle" type="checkbox" role="switch"></label></details>

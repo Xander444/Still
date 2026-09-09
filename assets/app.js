@@ -12,7 +12,7 @@
     else preference.theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     debug = savedPreferences?.debug === true;
     const savedText = localStorage.getItem(CHAT_KEY);
-    if (savedText && savedText.length < 1500000) {
+    if (savedText && savedText.length < 4000000) {
       const saved = JSON.parse(savedText);
       if (saved?.consent === true && engine.restore(saved.state)) remember = true;
     }
@@ -50,7 +50,8 @@
     document.querySelectorAll('input[name="mode"]').forEach(input => { input.checked = input.value === s.mode; });
     document.querySelectorAll('[data-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === s.mode)));
     const active = engine.threads().find(t => t.active);
-    $('thread-text').textContent = active ? active.description : s.facts.goal ? 'You want to ' + s.facts.goal.value.replace(/[.!]+$/, '') + '.' : s.topic === 'general' ? 'We can start anywhere.' : StillContent.topics[s.topic].label + '.';
+    const story = engine.stories().find(item => item.id === s.conversation.active);
+    $('thread-text').textContent = story ? 'Talking about ' + story.title + '.' : active ? active.description : s.facts.goal ? 'You want to ' + s.facts.goal.value.replace(/[.!]+$/, '') + '.' : s.topic === 'general' ? 'We can start anywhere.' : StillContent.topics[s.topic].label + '.';
     $('session-heading').textContent = s.mode === 'friend' ? 'What’s happening in your world?' : s.mode === 'step' ? 'Something within reach.' : 'One thought at a time.';
   }
   function openDialog(id) { const dialog = $(id); if (!dialog.open) dialog.showModal(); }
@@ -69,6 +70,21 @@
     if (message.support) {
       const bar = document.createElement('div'); bar.className = 'reply-tools';
       const button = document.createElement('button'); button.className = 'secondary-button'; button.textContent = 'Open urgent support'; button.addEventListener('click', support); bar.append(button); content.append(bar);
+    }
+    if (message.role === 'bot' && message.id) {
+      const feedback = document.createElement('details'); feedback.className = 'reply-feedback';
+      const summary = document.createElement('summary'); summary.textContent = message.reported ? 'Flagged: ' + message.reported.toLowerCase() : 'That didn’t fit';
+      const choices = document.createElement('div'); choices.className = 'feedback-choices';
+      for (const reason of ['Wrong topic', 'Wrong assumption', 'Already answered']) {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'secondary-button'; button.textContent = reason;
+        button.addEventListener('click', () => {
+          const reply = engine.reportFeedback(message.id, reason);
+          summary.textContent = 'Flagged: ' + reason.toLowerCase(); feedback.open = false; save(); renderFeedbackCount();
+          if (reply) showReply(reply); else toast('Example saved on this device.');
+          $('message').focus();
+        }); choices.append(button);
+      }
+      feedback.append(summary, choices); content.append(feedback);
     }
     if (debug && message.trace) {
       const details = document.createElement('details'); details.className = 'debug';
@@ -153,6 +169,27 @@
       buttons.append(back, resolve, remove); row.append(title, state, description, details, buttons); $('threads-list').append(row);
     }
   }
+  function renderStories() {
+    const list = $('stories-list'); list.replaceChildren(); const stories = engine.stories();
+    if (!stories.length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'No ongoing stories recorded yet.'; list.append(p); return; }
+    const labels = { subject: 'Subject', event: 'Event', time: 'When', person: 'Person', context: 'Where you know them', attraction: 'What you like', plan: 'Plan', activity: 'Activity', cause: 'What started it', preparation: 'Preparation', concern: 'Main concern', next: 'What happens next', goal: 'What you want', outcome: 'Outcome', company: 'With whom', favoritePart: 'Favorite part', opener: 'Possible opener', update: 'Latest update' };
+    for (const story of stories) {
+      const row = document.createElement('article'); row.className = 'thread-note';
+      const title = document.createElement('h4'); title.textContent = story.title;
+      const state = document.createElement('span'); state.className = 'thread-state'; state.textContent = story.status === 'resolved' ? 'Resolved' : story.id === engine.state.conversation.active ? 'Current' : 'Open';
+      const details = document.createElement('details'); const summary = document.createElement('summary'); summary.textContent = 'Details used in conversation'; details.append(summary);
+      const visible = story.details.filter(item => !['effort'].includes(item.key)).slice(-10);
+      if (!visible.length) { const p = document.createElement('p'); p.textContent = 'No extra details recorded yet.'; details.append(p); }
+      for (const item of visible) { const p = document.createElement('p'); const strong = document.createElement('strong'); strong.textContent = (labels[item.key] || item.key) + ': '; p.append(strong, document.createTextNode(item.value)); details.append(p); }
+      const recall = document.createElement('label'); recall.className = 'switch-row'; const recallInput = document.createElement('input'); recallInput.type = 'checkbox'; recallInput.checked = story.recall; recallInput.disabled = story.status === 'resolved' || story.sensitive; recall.append(document.createTextNode(story.sensitive ? 'Automatic check-ins off for this sensitive topic' : 'Bring this up naturally later'), recallInput);
+      recallInput.addEventListener('change', () => { const record = engine.state.conversation.stories.find(item => item.id === story.id); if (record) record.recall = recallInput.checked; save(); });
+      const buttons = document.createElement('div'); buttons.className = 'thread-buttons';
+      const back = document.createElement('button'); back.className = 'secondary-button'; back.textContent = 'Return to this'; back.addEventListener('click', () => { closeDialogs(); send('Back to ' + story.title); });
+      const resolve = document.createElement('button'); resolve.className = 'text-button'; resolve.textContent = 'Mark resolved'; resolve.disabled = story.status === 'resolved'; resolve.addEventListener('click', () => { engine.resolveStory(story.id); save(); syncContext(); renderStories(); });
+      const remove = document.createElement('button'); remove.className = 'text-button'; remove.textContent = 'Remove story'; remove.addEventListener('click', () => { engine.forgetStory(story.id); save(); syncContext(); renderStories(); toast('Story details removed. Original messages remain in the chat.'); });
+      buttons.append(back, resolve, remove); row.append(title, state, details, recall, buttons); list.append(row);
+    }
+  }
   function renderPeople() {
     const list = $('people-list'); list.replaceChildren();
     for (const p of engine.people()) {
@@ -178,10 +215,20 @@
     if (!list.children.length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'No people or interests remembered yet.'; list.append(p); }
   }
   function settings() {
-    renderNotes(); renderThreads(); renderPeople(); $('debug-toggle').checked = debug;
+    renderNotes(); renderThreads(); renderPeople(); renderStories(); $('debug-toggle').checked = debug;
     const p = engine.state.dialogue.preferences;
     $('questions-select').value = p.questions; $('brief-toggle').checked = p.brevity === 'brief'; $('exercises-toggle').checked = p.exercises; $('kindness-toggle').checked = p.encouragement;
-    status(); openDialog('settings-dialog');
+    renderFeedbackCount(); status(); openDialog('settings-dialog');
+  }
+  function renderFeedbackCount() {
+    const count = engine.state.feedback.length;
+    $('feedback-count').textContent = count ? count + ' flagged example' + (count === 1 ? '' : 's') + ' on this device.' : 'No replies flagged yet.';
+    $('feedback-export').disabled = count === 0; $('feedback-clear').disabled = count === 0;
+  }
+  function exportFeedback() {
+    const blob = new Blob([JSON.stringify(engine.feedbackExport(), null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = 'still-flagged-examples.json';
+    document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   function confirm(title, text, label, action) {
     $('confirm-heading').textContent = title; $('confirm-text').textContent = text; $('confirm-action').textContent = label; confirmAction = action;
@@ -220,6 +267,8 @@
   $('new-button').addEventListener('click', newChat);
   $('clear-button').addEventListener('click', erase);
   $('export-button').addEventListener('click', exportChat);
+  $('feedback-export').addEventListener('click', exportFeedback);
+  $('feedback-clear').addEventListener('click', () => { engine.state.feedback = []; engine.state.feedbackPending = null; for (const m of engine.state.history) delete m.reported; save(); renderFeedbackCount(); render(); toast('Flagged examples cleared.'); });
   for (const id of ['ground-button', 'mobile-ground']) $(id).addEventListener('click', () => { closeDialogs(); showReply(engine.grounding()); });
   for (const id of ['wrap-button', 'mobile-wrap']) $(id).addEventListener('click', () => { closeDialogs(); showReply(engine.wrap()); });
   $('confirm-action').addEventListener('click', () => { const action = confirmAction; confirmAction = null; closeDialogs(); if (action) action(); });
@@ -238,7 +287,7 @@
   window.addEventListener('storage', event => {
     if (event.key !== CHAT_KEY && event.key !== null) return;
     if (event.newValue === null) {
-      remember = false; engine.reset(false); engine.welcome(); $('message').value = ''; render(); resizeComposer(); status(); renderNotes(); renderThreads(); toast('Chat data was cleared in another tab.');
+      remember = false; engine.reset(false); engine.welcome(); $('message').value = ''; render(); resizeComposer(); status(); renderNotes(); renderThreads(); renderStories(); toast('Chat data was cleared in another tab.');
     } else if (remember) {
       remember = false; status(); toast('Another tab saved a conversation. Saving is paused here to avoid overwriting it.');
     }
