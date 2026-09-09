@@ -1,4 +1,4 @@
-# How Still 2 chooses a reply
+# How Still 3 chooses a reply
 
 Still is a symbolic program, not a language model. The engine receives a string and returns a response object:
 
@@ -8,7 +8,7 @@ const reply = bot.respond("I'm worried about my exam tomorrow.");
 // { role: 'bot', text, suggestions, support, trace }
 ```
 
-The browser exposes `Still`, `StillContent`, and `StillDialogue` through ordinary script tags. Load `content.js`, `dialogue.js`, `engine.js`, then `app.js`. Node tests use CommonJS exports. This deliberate dual export avoids module-fetch restrictions when opening the downloaded HTML directly.
+The browser exposes `Still`, `StillContent`, `StillDialogue`, and `StillFriend` through ordinary script tags. Load `content.js`, `dialogue.js`, `friend.js`, `engine.js`, then `app.js`. Node tests use CommonJS exports. This deliberate dual export avoids module-fetch restrictions when opening the downloaded HTML directly.
 
 ## Routing order
 
@@ -16,12 +16,12 @@ The browser exposes `Still`, `StillContent`, and `StillDialogue` through ordinar
 2. Check urgent phrases and any pending safety conversation.
 3. Handle explicit commands: preferences, thread return/resolution, interpretation correction, mode changes, pause/stop, wrapping up, and memory access.
 4. Handle identity, relationship boundaries, clinical requests, accountability, and selected unverifiable threat claims.
-5. Continue an exercise or handle greetings and short acknowledgements.
+5. Continue an exercise, learn explicitly introduced people, and check supported conversational intents. Romantic intent outranks incidental words such as “school”. Follow-up slots interpret short answers to the actual preceding question.
 6. Score topic keywords, keeping the existing topic when the user is answering its question or adding an emotion to a concrete situation.
 7. Classify what a message contributes and extract bounded fields with source turns. Update the matching situation thread and recognize compatible answers already supplied.
-8. Offer a change of approach for a recognized recurring concern with no new information. Resolve a pending short answer, next step, or obstacle.
+8. Friend mode uses casual responses, supported question context, and spaced memory callbacks. Reflection mode offers a change of approach for a recognized recurring concern with no new information. Resolve a pending short answer, next step, or obstacle.
 9. Prefer a specific reflection linking recognized details. Otherwise select a topic response and an unused, unanswered question.
-10. Respect pacing and brevity preferences. When eligible, offer a standalone, evidence-based acknowledgement; safety and correction replies never receive this decoration.
+10. Respect pacing and brevity preferences. When eligible, offer a grounded acknowledgement (Friend mode keeps its follow-up); safety and correction replies never receive this decoration.
 
 Specific rules have priority over topic matching. Topic scores are simple keyword weights and context bonuses; they are not probabilities. The debug display deliberately calls them scores, not confidence percentages.
 
@@ -30,6 +30,16 @@ Specific rules have priority over topic matching. Topic scores are simple keywor
 `engine.state` contains the mode, active topic, recently visited topics, pending question or exercise step, explicit fact notes, recent template IDs, and bounded transcript. `state.dialogue` holds structured message records, up to six situation threads, style preferences, pacing counters, and encouragement history. No personality score or diagnosis is created.
 
 Pending kinds include a requested school subject, a topic question, an action choice, an obstacle, a correction, a tentative interpretation, a grounding step, or a safety follow-up. Safety follow-ups track whether the last question asked about immediate danger or contacting someone; the same word “yes” must not mean both. A recognized explicit request to stop, change modes, or wrap up can interrupt an ordinary correction.
+
+## Friend mode and personal memory
+
+`state.social` stores up to 12 people and eight explicit interests, recent prompt IDs, the active person, and supported casual or crush questions. `friend.js` owns this logic. Phrase patterns are deliberately bounded; they do not create general language understanding.
+
+Names support direct introductions, explicit name labels, distinct siblings, and explicit corrections. Pronouns resolve only to an available active person; a plural introduction leaves the reference ambiguous. Automatic check-ins require at least four turns since mention, ten since the person’s previous check-in, and six since any automatic recall. They occur at an opening such as a stalled message or greeting, rather than interrupting every reply. Recognized bereavement or estrangement disables those check-ins. A user can disable or remove any person in settings or through a text command. Source wording is retained; old events are never assumed still current.
+
+The default is Friend mode. “Just listen” sets a temporary quiet preference; changing mode or explicitly asking for a question clears it. Repeated “nothing” or “idk” messages cycle casual prompts and eligible memories. There is no idle timer or outbound notification. Explicit goodbyes and stops remain available.
+
+The romance intent has its own stages for attraction, prior conversation, common ground, possible openers, and uncertain signals. It uses the current question to interpret “yes” and “no”, accepts an explicit correction of attraction, and yields to recognized topic changes. It does not infer another person’s feelings from a smile or assume rejection merely because a relationship topic was mentioned.
 
 ## Structured understanding
 
@@ -57,7 +67,7 @@ Preferences belong to the conversation state:
 
 | Preference | Values | Behavior |
 | --- | --- | --- |
-| Questions | balanced, direct, few | Balanced leaves a reflective pause after two ordinary questions; few does so after one. Direct keeps relevant questions available. |
+| Questions | balanced, direct, few | In Untangle it, balanced leaves a reflective pause after two ordinary questions; few does so after one. Friend mode keeps conversational follow-ups; few replaces alternating generic questions with an invitation to continue. |
 | Brevity | normal, brief | Brief trims ordinary responses while keeping key context. Safety information is not shortened by this setting. |
 | Exercises | enabled or disabled | Disabled exercises are removed from suggestions and the exercise button explains the preference. Explicitly re-enable to use them. |
 | Encouragement | enabled or disabled | Controls occasional extra kind words. Ordinary respectful language stays available. |
@@ -110,29 +120,29 @@ The example topic above is a customization example, not an included extra featur
 - Ask about observable events before making assumptions about another person's motives.
 - Make affirmation specific and proportionate. Avoid universal praise, certainty about future success, or telling someone they can do anything.
 - Allow ambivalence and correction. Ask rather than infer whenever a wrong assumption could hurt the conversation.
-- Do not turn every distress statement into homework. Respect listening mode.
+- Do not turn every distress statement into homework. Respect the temporary no-questions preference.
 - Do not imply the program has feelings, misses the user, is their therapist, or understands them better than people can.
-- Keep exercises optional, and let the conversation finish naturally.
+- Keep exercises optional, and respect explicit endings. Offer fresh conversational directions at ordinary lulls.
 
 ## Persistence and rendering
 
 - Chat saving is opt-in. The chat key is `still.chat.v1`; appearance preferences use `still.preferences.v1`.
 - Saved state is reconstructed from known keys with bounds. Arbitrary persisted objects, traces, or rule names are not executed.
-- The state schema is version 2. Version 1 chats migrate with their existing notes and messages, without inventing old structured records. Validated pending repairs and the supported evidence-backed interpretation can resume after reload.
+- The engine state schema is version 3; dialogue records remain version 2 and social records are version 1. Version 1 and 2 chats migrate with their existing notes and messages, without inventing old structured records. Validated pending repairs and the supported evidence-backed interpretation can resume after reload.
 - User messages, notes, and response text are written through `textContent` or input `.value`, never interpreted as HTML or code.
 - There is no `fetch`, XHR, WebSocket, remote font, or remote script.
 - A storage event from another tab pauses saving or clears the local conversation after deletion, preventing a stale tab from silently resurrecting an erased chat.
-- New chat retains fact notes and style preferences, while clearing message and thread context. Full erasure removes those too. Saved history and UI history are capped at 160 entries, structured records at 24, and situation threads at six.
+- New chat retains fact notes, people, interests, and style preferences, while clearing message and thread context. Full erasure removes those too. Saved history and UI history are capped at 160 entries, structured records at 24, and situation threads at six.
 - Removing a thread deletes its working fields and recent evidence. The original transcript still contains the messages; erasing the chat removes those separately.
 
 ## Known boundaries
 
 Negation, ownership, tense, entities, and sentiment use local phrase heuristics. They do not form a full grammatical parser. Multiple stories in a single message, quotations, uncommon names, implicit corrections, or a new topic expressed indirectly can confuse the rules. Guidance about a topic is human-authored and general; it is not a personalized clinical recommendation.
 
-The bot has a finite response library. It does not retrieve web facts or compose unrestricted new explanations. When it reaches the end of a topic's questions, it offers listening, a small step, or a natural stopping point instead of pretending to discover limitless insight.
+The bot has a finite response library. It does not retrieve web facts or compose unrestricted new explanations. When it reaches the end of a topic's questions, it offers a different angle, a small step, or a fresh conversational prompt. An explicit request to finish is respected.
 
 ## Validation included with this release
 
-The included Node suites cover 56 behavior scenarios. JavaScript syntax, HTML asset paths, script ordering, and UI control references were also checked statically. A live browser session and screen-reader audit were not performed in the build environment. Try the extracted app in your intended browser before publishing; verify mobile layout, keyboard behavior, dialog focus, local saving, erasure, export, and your own example conversations.
+The included Node suites cover 86 behavior scenarios. JavaScript syntax, HTML asset paths, script ordering, and UI control references were also checked statically. A live browser session and screen-reader audit were not performed in the build environment. Try the extracted app in your intended browser before publishing; verify mobile layout, keyboard behavior, dialog focus, local saving, erasure, export, and your own example conversations.
 
 Automated tests establish those specific behaviors, not clinical safety or the quality of arbitrary conversations.

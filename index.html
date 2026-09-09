@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="assets/styles.css">
   <script src="assets/content.js" defer></script>
   <script src="assets/dialogue.js" defer></script>
+  <script src="assets/friend.js" defer></script>
   <script src="assets/engine.js" defer></script>
   <script src="assets/app.js" defer></script>
 </head>
@@ -22,8 +23,8 @@
       <p class="sidebar-intro">A little room<br>to think.</p>
       <fieldset class="mode-picker">
         <legend>What would help?</legend>
-        <label class="mode-option"><input type="radio" name="mode" value="listen"><span><strong>Just listen</strong><small>Space to say it out loud</small></span><span class="mode-glyph" aria-hidden="true">○</span></label>
-        <label class="mode-option"><input type="radio" name="mode" value="reflect" checked><span><strong>Untangle it</strong><small>Find the thread together</small></span><span class="mode-glyph" aria-hidden="true">◎</span></label>
+        <label class="mode-option"><input type="radio" name="mode" value="friend" checked><span><strong>Friend mode</strong><small>Everyday chat, wherever it goes</small></span><span class="mode-glyph" aria-hidden="true">○</span></label>
+        <label class="mode-option"><input type="radio" name="mode" value="reflect"><span><strong>Untangle it</strong><small>Find the thread together</small></span><span class="mode-glyph" aria-hidden="true">◎</span></label>
         <label class="mode-option"><input type="radio" name="mode" value="step"><span><strong>A small step</strong><small>Something within reach</small></span><span class="mode-glyph" aria-hidden="true">↗</span></label>
       </fieldset>
       <section class="thread-card" aria-labelledby="thread-heading">
@@ -42,7 +43,7 @@
         <div><p class="eyebrow">YOUR SPACE</p><h1 id="session-heading">One thought at a time.</h1></div>
         <div class="header-actions"><button id="theme-button" class="icon-button" aria-label="Switch to dark mode" title="Change appearance">◐</button><button id="new-button" class="secondary-button compact">New conversation</button></div>
       </header>
-      <div class="mobile-modes" role="group" aria-label="Conversation style"><button data-mode="listen" aria-pressed="false">Just listen</button><button data-mode="reflect" aria-pressed="true">Untangle it</button><button data-mode="step" aria-pressed="false">A small step</button><button id="mobile-more" aria-label="Settings and conversation notes">•••</button></div>
+      <div class="mobile-modes" role="group" aria-label="Conversation style"><button data-mode="friend" aria-pressed="true">Friend mode</button><button data-mode="reflect" aria-pressed="false">Untangle it</button><button data-mode="step" aria-pressed="false">A small step</button><button id="mobile-more" aria-label="Settings and conversation notes">•••</button></div>
       <div class="conversation-scroll" id="conversation-scroll">
         <div class="conversation" id="conversation" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation with Still"></div>
       </div>
@@ -64,6 +65,7 @@
       <section><h3>Remember on this device</h3><label class="switch-row"><span>Save this chat and its notes<small>Off by default. If enabled, messages and notes are stored in this browser, without encryption. Anyone with access to this browser profile may be able to read them. Nothing is sent to an AI service.</small></span><input id="remember-toggle" type="checkbox" role="switch"></label><p id="storage-notice" class="notice" hidden></p></section>
       <section class="conversation-preferences"><h3>How you like to talk</h3><p class="muted">You can also tell Still these preferences in the chat.</p><label class="preference-select" for="questions-select">Questions<select id="questions-select"><option value="balanced">Balanced with reflections</option><option value="direct">Direct and focused</option><option value="few">Fewer questions</option></select></label><label class="switch-row"><span>Shorter replies</span><input id="brief-toggle" type="checkbox" role="switch"></label><label class="switch-row"><span>Offer optional exercises</span><input id="exercises-toggle" type="checkbox" role="switch"></label><label class="switch-row"><span>Occasional kind words<small>Specific encouragement about something you shared or did, with room between acknowledgements.</small></span><input id="kindness-toggle" type="checkbox" role="switch"></label></section>
       <section><h3>Conversation notes</h3><p class="muted">Only things you explicitly share. These can be mistaken; you can edit or remove them.</p><div id="memory-list" class="memory-list"></div></section>
+      <section><h3>People & interests</h3><p class="muted">Names and interests you share can come up later in conversation. Edit or remove them here, or say “Don’t ask about Leo.” Saved between visits only when saving is enabled.</p><div id="people-list" class="memory-list"></div></section>
       <section><h3>Conversation threads</h3><p class="muted">Situations you have talked about, with the details Still is using. Return to one, mark it resolved, or remove it. Interpretations are suggestions in the chat; they are not stored here as facts unless you confirm them.</p><div id="threads-list" class="threads-list"></div></section>
       <section class="settings-actions"><button id="export-button" class="secondary-button">Download conversation</button><button id="clear-button" class="danger-button">Erase chat & notes</button></section>
       <section class="mobile-tools"><h3>Take a moment</h3><button id="mobile-ground" class="secondary-button">Grounding pause</button><button id="mobile-wrap" class="secondary-button">Wrap up</button></section>

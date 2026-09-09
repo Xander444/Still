@@ -51,7 +51,7 @@
     document.querySelectorAll('[data-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === s.mode)));
     const active = engine.threads().find(t => t.active);
     $('thread-text').textContent = active ? active.description : s.facts.goal ? 'You want to ' + s.facts.goal.value.replace(/[.!]+$/, '') + '.' : s.topic === 'general' ? 'We can start anywhere.' : StillContent.topics[s.topic].label + '.';
-    $('session-heading').textContent = s.mode === 'listen' ? 'Room to let it out.' : s.mode === 'step' ? 'Something within reach.' : 'One thought at a time.';
+    $('session-heading').textContent = s.mode === 'friend' ? 'What’s happening in your world?' : s.mode === 'step' ? 'Something within reach.' : 'One thought at a time.';
   }
   function openDialog(id) { const dialog = $(id); if (!dialog.open) dialog.showModal(); }
   function closeDialogs() { document.querySelectorAll('dialog[open]').forEach(dialog => dialog.close()); }
@@ -153,8 +153,32 @@
       buttons.append(back, resolve, remove); row.append(title, state, description, details, buttons); $('threads-list').append(row);
     }
   }
+  function renderPeople() {
+    const list = $('people-list'); list.replaceChildren();
+    for (const p of engine.people()) {
+      const row = document.createElement('article'); row.className = 'thread-note';
+      const label = document.createElement('label'); label.textContent = 'Your ' + p.relation; label.htmlFor = p.id;
+      const input = document.createElement('input'); input.id = p.id; input.value = p.name; input.maxLength = 50;
+      const saveName = document.createElement('button'); saveName.textContent = 'Save name'; saveName.className = 'secondary-button';
+      saveName.addEventListener('click', () => { if (!engine.editPerson(p.id, input.value)) { toast('Enter a name using letters, spaces, apostrophes, or hyphens.'); return; } save(); renderPeople(); toast('Name updated.'); });
+      const toggle = document.createElement('label'); toggle.className = 'switch-row';
+      const check = document.createElement('input'); check.type = 'checkbox'; check.checked = p.recall; check.disabled = p.status !== 'ordinary';
+      toggle.append(document.createTextNode(p.status === 'ordinary' ? 'Bring up naturally later' : 'Automatic check-ins off for this sensitive topic'), check);
+      check.addEventListener('change', () => { engine.state.social.people.find(x => x.id === p.id).recall = check.checked; save(); });
+      const note = document.createElement('p'); note.className = 'muted'; note.textContent = p.note;
+      const remove = document.createElement('button'); remove.className = 'text-button'; remove.textContent = 'Remove person';
+      remove.addEventListener('click', () => { engine.forgetPerson(p.id); save(); renderPeople(); });
+      row.append(label, input, saveName, note, toggle, remove); list.append(row);
+    }
+    for (const interest of engine.state.social.interests) {
+      const row = document.createElement('div'); row.className = 'memory-row'; const text = document.createElement('span'); text.textContent = interest.text;
+      const remove = document.createElement('button'); remove.textContent = 'Remove interest'; remove.addEventListener('click', () => { engine.state.social.interests = engine.state.social.interests.filter(x => x !== interest); engine.forget('interest'); save(); renderPeople(); });
+      row.append(text, remove); list.append(row);
+    }
+    if (!list.children.length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'No people or interests remembered yet.'; list.append(p); }
+  }
   function settings() {
-    renderNotes(); renderThreads(); $('debug-toggle').checked = debug;
+    renderNotes(); renderThreads(); renderPeople(); $('debug-toggle').checked = debug;
     const p = engine.state.dialogue.preferences;
     $('questions-select').value = p.questions; $('brief-toggle').checked = p.brevity === 'brief'; $('exercises-toggle').checked = p.exercises; $('kindness-toggle').checked = p.encouragement;
     status(); openDialog('settings-dialog');
