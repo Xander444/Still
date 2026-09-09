@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Still is a private, offline reflection chatbot inspired by ELIZA. A little room to think, without an AI service.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; script-src 'self' file:; style-src 'self' file:; img-src 'self' file: data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Still — a little room to think</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/content.js" defer></script>
+  <script src="assets/dialogue.js" defer></script>
+  <script src="assets/engine.js" defer></script>
+  <script src="assets/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#message">Skip to message</a>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Conversation options">
+      <a class="brand" href="./index.html" aria-label="Still home"><span class="brand-mark" aria-hidden="true">s</span><span>still<span class="brand-period">.</span></span></a>
+      <p class="sidebar-intro">A little room<br>to think.</p>
+      <fieldset class="mode-picker">
+        <legend>What would help?</legend>
+        <label class="mode-option"><input type="radio" name="mode" value="listen"><span><strong>Just listen</strong><small>Space to say it out loud</small></span><span class="mode-glyph" aria-hidden="true">○</span></label>
+        <label class="mode-option"><input type="radio" name="mode" value="reflect" checked><span><strong>Untangle it</strong><small>Find the thread together</small></span><span class="mode-glyph" aria-hidden="true">◎</span></label>
+        <label class="mode-option"><input type="radio" name="mode" value="step"><span><strong>A small step</strong><small>Something within reach</small></span><span class="mode-glyph" aria-hidden="true">↗</span></label>
+      </fieldset>
+      <section class="thread-card" aria-labelledby="thread-heading">
+        <h2 id="thread-heading">The thread so far</h2>
+        <p id="thread-text">We can start anywhere.</p>
+        <button id="memory-button" class="text-button">View conversation notes <span aria-hidden="true">↗</span></button>
+      </section>
+      <div class="sidebar-actions">
+        <button id="ground-button" class="secondary-button"><span aria-hidden="true">✳</span> Take a grounding pause</button>
+        <button id="wrap-button" class="text-button">Wrap up this conversation</button>
+      </div>
+      <div class="sidebar-bottom"><span class="offline-icon" aria-hidden="true">◇</span><p>Replies stay on this device.<br><button id="privacy-button" class="inline-button">Privacy & settings</button></p></div>
+    </aside>
+    <main class="main-panel">
+      <header class="chat-header">
+        <div><p class="eyebrow">YOUR SPACE</p><h1 id="session-heading">One thought at a time.</h1></div>
+        <div class="header-actions"><button id="theme-button" class="icon-button" aria-label="Switch to dark mode" title="Change appearance">◐</button><button id="new-button" class="secondary-button compact">New conversation</button></div>
+      </header>
+      <div class="mobile-modes" role="group" aria-label="Conversation style"><button data-mode="listen" aria-pressed="false">Just listen</button><button data-mode="reflect" aria-pressed="true">Untangle it</button><button data-mode="step" aria-pressed="false">A small step</button><button id="mobile-more" aria-label="Settings and conversation notes">•••</button></div>
+      <div class="conversation-scroll" id="conversation-scroll">
+        <div class="conversation" id="conversation" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation with Still"></div>
+      </div>
+      <div class="composer-area">
+        <div id="suggestions" class="suggestions" aria-label="Suggested messages"></div>
+        <form id="chat-form" class="composer">
+          <label class="sr-only" for="message">Your message</label>
+          <textarea id="message" rows="1" maxlength="4000" placeholder="What's on your mind?" autocomplete="off" spellcheck="true" required></textarea>
+          <button id="send-button" type="submit" aria-label="Send message" title="Send message"><span aria-hidden="true">↑</span></button>
+        </form>
+        <div class="composer-meta"><span id="save-status">Not saved after you close this page</span><span id="character-count" hidden></span></div>
+        <p class="boundary">A reflective chatbot, not a therapist. <button id="support-button" class="inline-button">Urgent support</button></p>
+      </div>
+    </main>
+  </div>
+  <dialog id="settings-dialog" aria-labelledby="settings-heading">
+    <div class="dialog-header"><h2 id="settings-heading">Make this space yours</h2><button class="icon-button" data-close aria-label="Close settings">×</button></div>
+    <div class="dialog-content">
+      <section><h3>Remember on this device</h3><label class="switch-row"><span>Save this chat and its notes<small>Off by default. If enabled, messages and notes are stored in this browser, without encryption. Anyone with access to this browser profile may be able to read them. Nothing is sent to an AI service.</small></span><input id="remember-toggle" type="checkbox" role="switch"></label><p id="storage-notice" class="notice" hidden></p></section>
+      <section class="conversation-preferences"><h3>How you like to talk</h3><p class="muted">You can also tell Still these preferences in the chat.</p><label class="preference-select" for="questions-select">Questions<select id="questions-select"><option value="balanced">Balanced with reflections</option><option value="direct">Direct and focused</option><option value="few">Fewer questions</option></select></label><label class="switch-row"><span>Shorter replies</span><input id="brief-toggle" type="checkbox" role="switch"></label><label class="switch-row"><span>Offer optional exercises</span><input id="exercises-toggle" type="checkbox" role="switch"></label><label class="switch-row"><span>Occasional kind words<small>Specific encouragement about something you shared or did, with room between acknowledgements.</small></span><input id="kindness-toggle" type="checkbox" role="switch"></label></section>
+      <section><h3>Conversation notes</h3><p class="muted">Only things you explicitly share. These can be mistaken; you can edit or remove them.</p><div id="memory-list" class="memory-list"></div></section>
+      <section><h3>Conversation threads</h3><p class="muted">Situations you have talked about, with the details Still is using. Return to one, mark it resolved, or remove it. Interpretations are suggestions in the chat; they are not stored here as facts unless you confirm them.</p><div id="threads-list" class="threads-list"></div></section>
+      <section class="settings-actions"><button id="export-button" class="secondary-button">Download conversation</button><button id="clear-button" class="danger-button">Erase chat & notes</button></section>
+      <section class="mobile-tools"><h3>Take a moment</h3><button id="mobile-ground" class="secondary-button">Grounding pause</button><button id="mobile-wrap" class="secondary-button">Wrap up</button></section>
+      <details><summary>How Still works</summary><p>Still uses written conversation rules, word patterns, and notes from this chat. It can miss context, sarcasm, or the meaning of a sentence. Correct it any time. It cannot diagnose, provide treatment, or contact help for you.</p><p>There are no accounts, analytics, remote fonts, language models, or API keys. A hosting provider may log page visits; Still's code does not send your messages anywhere.</p><label class="switch-row"><span>Show why a reply was chosen<small>A view into the rules, useful when customizing the code.</small></span><input id="debug-toggle" type="checkbox" role="switch"></label></details>
+    </div>
+  </dialog>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-heading"><div class="dialog-header"><h2 id="confirm-heading">Start fresh?</h2><button class="icon-button" data-close aria-label="Cancel">×</button></div><div class="dialog-content"><p id="confirm-text"></p><div class="dialog-buttons"><button class="secondary-button" data-close>Keep this conversation</button><button id="confirm-action" class="primary-button">Start fresh</button></div></div></dialog>
+  <dialog id="support-dialog" aria-labelledby="support-heading"><div class="dialog-header"><h2 id="support-heading">Reach someone who can help</h2><button class="icon-button" data-close aria-label="Close support information">×</button></div><div class="dialog-content"><p>If you might act on thoughts of suicide or seriously hurting someone, or you have already been injured or taken an overdose, contact emergency services now. If possible, get near a safe person and move away from anything you could use to hurt yourself or someone else.</p><div class="support-links"><a href="tel:988">Canada & United States: call 988</a><a href="sms:988">Canada & United States: text 988</a><a href="https://findahelpline.com/" target="_blank" rel="noopener noreferrer">Find support in another country ↗</a></div><p class="muted">988 supports people experiencing suicidal thoughts and people worried about someone else. If danger is immediate, call your local emergency number (911 in Canada and the US). Still cannot assess your safety or call for you.</p></div></dialog>
+  <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+  <noscript><div class="noscript">Please enable JavaScript to use Still. No network connection is needed for replies.</div></noscript>
+</body>
+</html>
